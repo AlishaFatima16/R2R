@@ -102,8 +102,55 @@ RELEASE = TableSpec(
     """,
 )
 
+# Append-only tables: every row is inserted. Frames do not carry run_id; load() adds it.
+QUARANTINE = TableSpec(
+    table="quarantine",
+    columns=(
+        ("run_id", "BIGINT"),
+        ("raw_object_id", "BIGINT"),
+        ("stage", "TEXT"),
+        ("reason_code", "TEXT"),
+        ("field_path", "TEXT"),
+        ("message", "TEXT"),
+    ),
+    key=(),
+    needs_run_id=True,
+    upsert_sql="""
+        INSERT INTO quarantine
+            (run_id, raw_object_id, stage, reason_code, field_path, message)
+        SELECT run_id, raw_object_id, stage, reason_code, field_path, message
+        FROM stg_quarantine
+        RETURNING true AS inserted
+    """,
+)
+
+DATA_QUALITY_RESULT = TableSpec(
+    table="data_quality_result",
+    columns=(
+        ("run_id", "BIGINT"),
+        ("check_name", "TEXT"),
+        ("dimension", "TEXT"),
+        ("table_name", "TEXT"),
+        ("metric_value", "NUMERIC"),
+        ("threshold", "NUMERIC"),
+        ("passed", "BOOLEAN"),
+        ("details", "JSONB"),
+    ),
+    key=(),
+    needs_run_id=True,
+    upsert_sql="""
+        INSERT INTO data_quality_result
+            (run_id, check_name, dimension, table_name, metric_value, threshold,
+             passed, details)
+        SELECT run_id, check_name, dimension, table_name, metric_value, threshold,
+               passed, details
+        FROM stg_data_quality_result
+        RETURNING true AS inserted
+    """,
+)
+
 # Foreign-key order. New tables are added here as they are implemented.
-LOAD_ORDER: tuple[TableSpec, ...] = (PACKAGE, RELEASE)
+LOAD_ORDER: tuple[TableSpec, ...] = (PACKAGE, RELEASE, QUARANTINE, DATA_QUALITY_RESULT)
 
 
 def load(
@@ -111,7 +158,9 @@ def load(
 ) -> dict[str, TableResult]:
     """Load all given frames in one transaction. Either everything commits or nothing does.
 
-    run_id is accepted for the interface in docs/interfaces.md but is not used yet.
+    run_id is required when frames include quarantine or data_quality_result.
+    Load quarantine rows in their own load() call, so that they are kept even if the load
+    of the data tables fails and rolls back.
     """
     supported = {spec.table for spec in LOAD_ORDER}
     unsupported = sorted(set(frames) - supported)
@@ -122,5 +171,5 @@ def load(
     with conn.transaction():
         for spec in LOAD_ORDER:
             if spec.table in frames:
-                results[spec.table] = upsert(conn, spec, frames[spec.table])
+                results[spec.table] = upsert(conn, spec, frames[spec.table], run_id)
     return results
