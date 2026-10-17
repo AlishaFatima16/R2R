@@ -107,4 +107,4 @@ def test_duplicate_keys_in_one_batch_are_rejected(conn):
 
 def test_tables_without_a_loader_are_rejected(conn):
     with pytest.raises(LoadError, match="No loader yet"):
-        load({"dependency": pd.DataFrame()}, conn)
+        load({"vulnerability": pd.DataFrame()}, conn)
