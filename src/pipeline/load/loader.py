@@ -13,6 +13,7 @@ The loader treats content_hash as an opaque value computed by the transform stag
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 import pandas as pd
@@ -31,6 +32,7 @@ class TableSpec:
     key: tuple[str, ...]  # natural key, as frame columns
     upsert_sql: str  # INSERT ... SELECT FROM stg_<table> ... RETURNING (xmax = 0)
     unresolved_sql: str | None = None  # returns names that have no parent row
+    needs_run_id: bool = False  # the loader adds a run_id column from load(..., run_id)
 
     @property
     def staging(self) -> str:
@@ -57,24 +59,41 @@ def check_frame(spec: TableSpec, frame: pd.DataFrame) -> None:
             f"{spec.table}: frame columns do not match. "
             f"missing={sorted(expected - actual)} unexpected={sorted(actual - expected)}"
         )
+    if not spec.key:  # append-only table (for example quarantine)
+        return
     duplicated = frame.duplicated(subset=list(spec.key), keep=False)
     if duplicated.any():
         sample = frame.loc[duplicated, list(spec.key)].head(5).to_dict("records")
         raise LoadError(f"{spec.table}: duplicate natural keys in one batch, e.g. {sample}")
 
 
+def is_missing(value) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, (list, dict, tuple)):
+        return False
+    return bool(pd.isna(value))
+
+
 def to_rows(spec: TableSpec, frame: pd.DataFrame) -> list[tuple]:
-    """Plain Python tuples for COPY: missing values become None, whole numbers become int."""
+    """Plain Python tuples for COPY.
+
+    Missing values become None, whole numbers become int, Timestamps become datetimes,
+    and dicts or lists in JSONB columns become JSON text.
+    """
     ints = {name for name, sql_type in spec.columns if sql_type.upper() in INTEGER_TYPES}
+    jsons = {name for name, sql_type in spec.columns if sql_type.upper() == "JSONB"}
     columns = []
     for name in spec.column_names:
         values = frame[name].astype(object).tolist()
         cleaned = []
         for value in values:
-            if value is None or pd.isna(value):
+            if is_missing(value):
                 cleaned.append(None)
             elif name in ints:
                 cleaned.append(int(value))
+            elif name in jsons:
+                cleaned.append(json.dumps(value, default=str))
             elif isinstance(value, pd.Timestamp):
                 cleaned.append(value.to_pydatetime())
             else:
@@ -83,8 +102,14 @@ def to_rows(spec: TableSpec, frame: pd.DataFrame) -> list[tuple]:
     return list(zip(*columns)) if columns else []
 
 
-def upsert(conn, spec: TableSpec, frame: pd.DataFrame) -> TableResult:
+def upsert(
+    conn, spec: TableSpec, frame: pd.DataFrame, run_id: int | None = None
+) -> TableResult:
     """Upsert one table. Call inside a transaction (conn.transaction())."""
+    if spec.needs_run_id:
+        if run_id is None:
+            raise LoadError(f"{spec.table}: run_id is required to load this table")
+        frame = frame.assign(run_id=run_id)
     check_frame(spec, frame)
     rows = to_rows(spec, frame)
     if not rows:
