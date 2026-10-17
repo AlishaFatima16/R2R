@@ -102,6 +102,70 @@ RELEASE = TableSpec(
     """,
 )
 
+# One row per requirement of a release. The frame names the release by (canonical_name,
+# version) and the target by target_name; the loader looks up both IDs. dependency has no
+# content_hash, so a row counts as changed when any of its value columns differ.
+DEPENDENCY = TableSpec(
+    table="dependency",
+    columns=(
+        ("canonical_name", "TEXT"),
+        ("version", "TEXT"),
+        ("raw_requirement", "TEXT"),
+        ("requirement_valid", "BOOLEAN"),
+        ("target_name", "TEXT"),
+        ("extras", "TEXT[]"),
+        ("specifier", "TEXT"),
+        ("marker", "TEXT"),
+        ("is_extra_only", "BOOLEAN"),
+        ("is_conditional", "BOOLEAN"),
+    ),
+    key=("canonical_name", "version", "raw_requirement"),
+    unresolved_sql="""
+        SELECT DISTINCT 'release ' || s.canonical_name || '==' || s.version AS problem
+        FROM stg_dependency s
+        LEFT JOIN package p ON p.canonical_name = s.canonical_name
+        LEFT JOIN release r ON r.package_id = p.package_id AND r.version = s.version
+        WHERE r.release_id IS NULL
+        UNION
+        SELECT DISTINCT 'target package ' || s.target_name
+        FROM stg_dependency s
+        LEFT JOIN package tp ON tp.canonical_name = s.target_name
+        WHERE s.target_name IS NOT NULL AND tp.package_id IS NULL
+        UNION
+        SELECT DISTINCT 'valid requirement without target_name: ' || s.raw_requirement
+        FROM stg_dependency s
+        WHERE s.requirement_valid AND s.target_name IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO dependency AS t
+            (release_id, raw_requirement, requirement_valid, target_package_id, extras,
+             specifier, marker, is_extra_only, is_conditional)
+        SELECT r.release_id, s.raw_requirement, s.requirement_valid, tp.package_id,
+               s.extras, s.specifier, s.marker, s.is_extra_only, s.is_conditional
+        FROM stg_dependency s
+        JOIN package p ON p.canonical_name = s.canonical_name
+        JOIN release r ON r.package_id = p.package_id AND r.version = s.version
+        LEFT JOIN package tp ON tp.canonical_name = s.target_name
+        ON CONFLICT (release_id, raw_requirement) DO UPDATE SET
+            requirement_valid = EXCLUDED.requirement_valid,
+            target_package_id = EXCLUDED.target_package_id,
+            extras            = EXCLUDED.extras,
+            specifier         = EXCLUDED.specifier,
+            marker            = EXCLUDED.marker,
+            is_extra_only     = EXCLUDED.is_extra_only,
+            is_conditional    = EXCLUDED.is_conditional
+        WHERE (t.requirement_valid, t.target_package_id, t.extras, t.specifier, t.marker,
+               t.is_extra_only, t.is_conditional)
+              IS DISTINCT FROM
+              (EXCLUDED.requirement_valid, EXCLUDED.target_package_id, EXCLUDED.extras,
+               EXCLUDED.specifier, EXCLUDED.marker, EXCLUDED.is_extra_only,
+               EXCLUDED.is_conditional)
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
 # Append-only tables: every row is inserted. Frames do not carry run_id; load() adds it.
 QUARANTINE = TableSpec(
     table="quarantine",
@@ -150,7 +214,13 @@ DATA_QUALITY_RESULT = TableSpec(
 )
 
 # Foreign-key order. New tables are added here as they are implemented.
-LOAD_ORDER: tuple[TableSpec, ...] = (PACKAGE, RELEASE, QUARANTINE, DATA_QUALITY_RESULT)
+LOAD_ORDER: tuple[TableSpec, ...] = (
+    PACKAGE,
+    RELEASE,
+    DEPENDENCY,
+    QUARANTINE,
+    DATA_QUALITY_RESULT,
+)
 
 
 def load(
