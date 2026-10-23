@@ -102,9 +102,6 @@ RELEASE = TableSpec(
     """,
 )
 
-# One row per requirement of a release. The frame names the release by (canonical_name,
-# version) and the target by target_name; the loader looks up both IDs. dependency has no
-# content_hash, so a row counts as changed when any of its value columns differ.
 DEPENDENCY = TableSpec(
     table="dependency",
     columns=(
@@ -166,6 +163,98 @@ DEPENDENCY = TableSpec(
     """,
 )
 
+VULNERABILITY = TableSpec(
+    table="vulnerability",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("published_at", "TIMESTAMPTZ"),
+        ("modified_at", "TIMESTAMPTZ"),
+        ("withdrawn_at", "TIMESTAMPTZ"),
+        ("summary", "TEXT"),
+        ("details", "TEXT"),
+        ("schema_version", "TEXT"),
+        ("dates_out_of_order", "BOOLEAN"),
+        ("raw_object_id", "BIGINT"),
+        ("content_hash", "CHAR(64)"),
+    ),
+    key=("vulnerability_id",),
+    upsert_sql="""
+        INSERT INTO vulnerability AS t
+            (vulnerability_id, published_at, modified_at, withdrawn_at, summary, details,
+             schema_version, dates_out_of_order, raw_object_id, content_hash)
+        SELECT vulnerability_id, published_at, modified_at, withdrawn_at, summary, details,
+               schema_version, dates_out_of_order, raw_object_id, content_hash
+        FROM stg_vulnerability
+        ON CONFLICT (vulnerability_id) DO UPDATE SET
+            published_at       = EXCLUDED.published_at,
+            modified_at        = EXCLUDED.modified_at,
+            withdrawn_at       = EXCLUDED.withdrawn_at,
+            summary            = EXCLUDED.summary,
+            details            = EXCLUDED.details,
+            schema_version     = EXCLUDED.schema_version,
+            dates_out_of_order = EXCLUDED.dates_out_of_order,
+            raw_object_id      = EXCLUDED.raw_object_id,
+            content_hash       = EXCLUDED.content_hash
+        WHERE t.content_hash IS DISTINCT FROM EXCLUDED.content_hash
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
+# Aliases are insert-only: a row that already exists is left alone. An alias that an
+# advisory later drops is not deleted here.
+VULNERABILITY_ALIAS = TableSpec(
+    table="vulnerability_alias",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("alias", "TEXT"),
+    ),
+    key=("vulnerability_id", "alias"),
+    unresolved_sql="""
+        SELECT DISTINCT s.vulnerability_id
+        FROM stg_vulnerability_alias s
+        LEFT JOIN vulnerability v ON v.vulnerability_id = s.vulnerability_id
+        WHERE v.vulnerability_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO vulnerability_alias (vulnerability_id, alias)
+        SELECT vulnerability_id, alias
+        FROM stg_vulnerability_alias
+        ON CONFLICT (vulnerability_id, alias) DO NOTHING
+        RETURNING true AS inserted
+    """,
+)
+
+VULNERABILITY_SEVERITY = TableSpec(
+    table="vulnerability_severity",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("severity_type", "TEXT"),
+        ("vector", "TEXT"),
+        ("origin", "TEXT"),
+    ),
+    key=("vulnerability_id", "severity_type", "vector"),
+    unresolved_sql="""
+        SELECT DISTINCT s.vulnerability_id
+        FROM stg_vulnerability_severity s
+        LEFT JOIN vulnerability v ON v.vulnerability_id = s.vulnerability_id
+        WHERE v.vulnerability_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO vulnerability_severity AS t
+            (vulnerability_id, severity_type, vector, origin)
+        SELECT vulnerability_id, severity_type, vector, origin
+        FROM stg_vulnerability_severity
+        ON CONFLICT (vulnerability_id, severity_type, vector) DO UPDATE SET
+            origin = EXCLUDED.origin
+        WHERE t.origin IS DISTINCT FROM EXCLUDED.origin
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
 # Append-only tables: every row is inserted. Frames do not carry run_id; load() adds it.
 QUARANTINE = TableSpec(
     table="quarantine",
@@ -218,6 +307,9 @@ LOAD_ORDER: tuple[TableSpec, ...] = (
     PACKAGE,
     RELEASE,
     DEPENDENCY,
+    VULNERABILITY,
+    VULNERABILITY_ALIAS,
+    VULNERABILITY_SEVERITY,
     QUARANTINE,
     DATA_QUALITY_RESULT,
 )
