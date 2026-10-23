@@ -1,5 +1,5 @@
 import hashlib
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 import pytest
@@ -91,7 +91,8 @@ def test_timestamps_keep_their_timezone(conn):
     uploaded = conn.execute(
         "SELECT uploaded_at FROM release WHERE version = '2.31.0'"
     ).fetchone()[0]
-    assert uploaded == datetime(2024, 1, 2, 3, 4, 5, tzinfo=UTC)
+    assert uploaded == datetime(2024, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+
 
 def test_release_without_its_package_is_rejected(conn):
     with pytest.raises(LoadError, match="no parent row"):
@@ -107,4 +108,4 @@ def test_duplicate_keys_in_one_batch_are_rejected(conn):
 
 def test_tables_without_a_loader_are_rejected(conn):
     with pytest.raises(LoadError, match="No loader yet"):
-        load({"vulnerability": pd.DataFrame()}, conn)
+        load({"nonexistent_table": pd.DataFrame()}, conn)
