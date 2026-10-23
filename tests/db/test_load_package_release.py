@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import pytest
@@ -91,7 +91,7 @@ def test_timestamps_keep_their_timezone(conn):
     uploaded = conn.execute(
         "SELECT uploaded_at FROM release WHERE version = '2.31.0'"
     ).fetchone()[0]
-    assert uploaded == datetime(2024, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+    assert uploaded == datetime(2024, 1, 2, 3, 4, 5, tzinfo=UTC)
 
 
 def test_release_without_its_package_is_rejected(conn):
