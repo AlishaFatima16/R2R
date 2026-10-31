@@ -1,5 +1,4 @@
 import gzip
-import json
 
 import pytest
 import requests
@@ -74,7 +73,7 @@ def test_a_network_error_is_retried():
 
 
 def test_a_truncated_body_is_retried():
-    c, session, _ = client([FakeResponse(200, bad_json=True), FakeResponse(200, {"ok": 1})])
+    c, _, _ = client([FakeResponse(200, bad_json=True), FakeResponse(200, {"ok": 1})])
     assert c.request("GET", "https://example.com/x").body == {"ok": 1}
 
 
