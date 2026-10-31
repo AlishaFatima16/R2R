@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-SAFE_NAME = re.compile(r"[A-Za-z0-9._-]+")
+SAFE_NAME = re.compile(r"[A-Za-z0-9._%@-]+")
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,7 @@ def body_sha256(body) -> str:
 
 def raw_file_path(source: str, run_label: str, name: str) -> str:
     for part in (source, run_label, name):
-        if not SAFE_NAME.fullmatch(part):
+        if not SAFE_NAME.fullmatch(part) or part in (".", ".."):
             raise ValueError(f"unsafe name for a file path: {part!r}")
     return f"data/raw/{source}/{run_label}/{name}.jsonl.gz"
 
