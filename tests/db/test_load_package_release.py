@@ -93,6 +93,7 @@ def test_timestamps_keep_their_timezone(conn):
     ).fetchone()[0]
     assert uploaded == datetime(2024, 1, 2, 3, 4, 5, tzinfo=UTC)
 
+
 def test_release_without_its_package_is_rejected(conn):
     with pytest.raises(LoadError, match="no parent row"):
         load({"release": release_frame()}, conn)
@@ -107,4 +108,4 @@ def test_duplicate_keys_in_one_batch_are_rejected(conn):
 
 def test_tables_without_a_loader_are_rejected(conn):
     with pytest.raises(LoadError, match="No loader yet"):
-        load({"dependency": pd.DataFrame()}, conn)
+        load({"nonexistent_table": pd.DataFrame()}, conn)
