@@ -1,3 +1,5 @@
+# R2R PyPI package seed list
+# Format: package_name,tier (A or B); lines starting with # are ignored
 boto3,A
 packaging,A
 typing-extensions,A
