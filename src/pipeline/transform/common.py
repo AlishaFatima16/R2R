@@ -5,14 +5,18 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
+
+import pandas as pd
 
 
 def content_hash(row: Mapping[str, Any], columns: Sequence[str]) -> str:
     values = []
     for column in columns:
         value = row.get(column)
+        if value is None or pd_is_missing(value):
+            value = None
         if isinstance(value, datetime):
             value = value.isoformat()
         values.append(value)
@@ -23,4 +27,15 @@ def content_hash(row: Mapping[str, Any], columns: Sequence[str]) -> str:
 def utc_datetime(value: datetime | None) -> datetime | None:
     if value is None:
         return None
-    return value.astimezone(__import__("datetime").UTC)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def pd_is_missing(value: Any) -> bool:
+    """Return whether a scalar is a Pandas null without treating lists as null."""
+    try:
+        result = pd.isna(value)
+    except (TypeError, ValueError):
+        return False
+    return bool(result) if isinstance(result, bool) else False

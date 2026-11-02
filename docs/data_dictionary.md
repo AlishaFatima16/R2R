@@ -11,17 +11,14 @@ migration and missing values are written as SQL `NULL`.
 - `release.version_valid`: whether the text parses as PEP 440.
 - `release.version_rank`: ascending rank among valid releases for a package.
 - `dependency.raw_requirement`: exact published requirement.
-- `dependency.target_canonical_name`: normalized target, or null when parsing fails.
+- `dependency.target_name`: normalized target, or null when parsing fails.
 - `dependency.requirement_valid`, `is_extra_only`, `is_conditional`: soft validation flags.
 
 ## OSV
 
-OSV identifiers and aliases are preserved. Package names in `affected` are
-normalized. Range and event positions are retained as `entry_index`,
-`range_index`, and `event_order`, making repeated runs deterministic.
-`affected_release.in_range` is calculated from OSV events using PEP 440 ordering;
-`in_enumerated` records OSV's explicit version list. `None` means no usable
-range/list was available, not that the release is safe.
+OSV identifiers, aliases, and severity records are preserved. Each advisory in
+an OSV page becomes its own vulnerability row; duplicate aliases and severity
+records are removed before loading. Timestamps are timezone-aware UTC values.
 
 ## Quarantine
 

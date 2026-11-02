@@ -10,8 +10,8 @@ RELEASE_COLUMNS = (
     "deps_fetched", "raw_object_id", "content_hash",
 )
 DEPENDENCY_COLUMNS = (
-    "canonical_name", "version", "raw_requirement", "requirement_valid", "target_canonical_name",
-    "extras", "specifier", "marker", "is_extra_only", "is_conditional", "content_hash",
+    "canonical_name", "version", "raw_requirement", "requirement_valid", "target_name",
+    "extras", "specifier", "marker", "is_extra_only", "is_conditional",
 )
 VULNERABILITY_COLUMNS = (
     "vulnerability_id", "published_at", "modified_at", "withdrawn_at", "summary", "details",
