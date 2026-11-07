@@ -1,4 +1,4 @@
-"""The one-command run: fetch -> save raw -> register -> validate -> transform -> load.
+﻿"""The one-command run: fetch -> save raw -> register -> validate -> transform -> load.
 
     python -m pipeline.orchestrate --seed-file config/seed.txt
     python -m pipeline.orchestrate --packages six:A flask:A          (quick test)
@@ -52,7 +52,7 @@ from pipeline.validate.pypi import (
 )
 
 QUARANTINE_FRAME_COLUMNS = ["raw_object_id", "stage", "reason_code", "field_path", "message"]
-VALID_TIERS = ("A", "B", "C")
+VALID_TIERS = ("A", "B")
 
 
 # ---------------------------------------------------------------- what the transform gets
@@ -85,7 +85,7 @@ class ValidatedBatch:
     """Everything that passed validation in one run, plus the seed list."""
 
     run_id: int
-    seed: dict[str, str]  # canonical name -> tier ("A", "B" or "C")
+    seed: dict[str, str]  # canonical name -> tier ("A" or "B")
     projects: list[ProjectItem] = field(default_factory=list)
     versions: list[VersionItem] = field(default_factory=list)
     osv_pages: list[OsvPageItem] = field(default_factory=list)
@@ -218,7 +218,7 @@ def parse_seed(entries: list[str]) -> dict[str, str]:
         name, sep, tier = text.replace(":", ",").partition(",")
         tier = tier.strip().upper()
         if not sep or tier not in VALID_TIERS:
-            raise ValueError(f"seed entry {entry!r} needs a tier: name,A  (A, B or C)")
+            raise ValueError(f"seed entry {entry!r} needs a tier: name,A  (A or B)")
         seed[canonical_name(name.strip())] = tier
     return seed
 
@@ -361,7 +361,7 @@ def print_summary(summary: RunSummary, log=print) -> None:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Run the whole R2R pipeline once.")
-    parser.add_argument("--seed-file", type=Path, help="lines of: name,tier  (tier A, B or C)")
+    parser.add_argument("--seed-file", type=Path, help="lines of: name,tier  (tier A or B)")
     parser.add_argument("--packages", nargs="*", default=[], help="name:tier, for quick tests")
     parser.add_argument("--run-label", help="reuse a label to resume or replay its raw files")
     parser.add_argument("--skip-fetch", action="store_true", help="only replay saved raw files")
