@@ -1,4 +1,4 @@
-"""Batch transform plug-in used by :mod:`pipeline.orchestrate`."""
+﻿"""Batch transform plug-in used by :mod:`pipeline.orchestrate`."""
 
 from __future__ import annotations
 
@@ -24,6 +24,8 @@ def transform(batch) -> object:
 
     combined: dict[str, list[pd.DataFrame]] = defaultdict(list)
     for name, item in projects.items():
+        if name not in batch.seed:
+            continue
         combined_frames = transform_project(
             item.project,
             versions.get(name, {}),
