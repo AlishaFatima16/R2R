@@ -1,4 +1,4 @@
-import json
+﻿import json
 from pathlib import Path
 
 import pandas as pd
@@ -51,7 +51,8 @@ def test_transform_uses_real_fixture_shapes_and_loader_columns():
         "vulnerability_alias": VULNERABILITY_ALIAS,
         "vulnerability_severity": VULNERABILITY_SEVERITY,
     }
-    assert set(result.frames) == set(expected)
+    assert set(expected) <= set(result.frames)
+    assert {"affected_package", "affected_range", "affected_event", "affected_release"} <= set(result.frames)
     for table, spec in expected.items():
         assert list(result.frames[table].columns) == loader_columns(spec)
 

@@ -255,6 +255,187 @@ VULNERABILITY_SEVERITY = TableSpec(
     """,
 )
 
+# The affected_* tables. Their surrogate IDs (affected_id, range_id) never appear in frames.
+# A frame names the position instead: (vulnerability_id, entry_index) is one OSV "affected"
+# entry, range_index is a range inside it, event_order an event inside the range.
+# Rows that an advisory later drops are not deleted here.
+AFFECTED_PACKAGE = TableSpec(
+    table="affected_package",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("entry_index", "SMALLINT"),
+        ("package_name", "TEXT"),
+    ),
+    key=("vulnerability_id", "entry_index"),
+    unresolved_sql="""
+        SELECT DISTINCT s.vulnerability_id
+        FROM stg_affected_package s
+        LEFT JOIN vulnerability v ON v.vulnerability_id = s.vulnerability_id
+        WHERE v.vulnerability_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO affected_package AS t
+            (vulnerability_id, entry_index, package_name, package_id)
+        SELECT s.vulnerability_id, s.entry_index, s.package_name, p.package_id
+        FROM stg_affected_package s
+        LEFT JOIN package p ON p.canonical_name = s.package_name
+        ON CONFLICT (vulnerability_id, entry_index) DO UPDATE SET
+            package_name = EXCLUDED.package_name,
+            package_id   = EXCLUDED.package_id
+        WHERE (t.package_name, t.package_id)
+              IS DISTINCT FROM (EXCLUDED.package_name, EXCLUDED.package_id)
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
+AFFECTED_RANGE = TableSpec(
+    table="affected_range",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("entry_index", "SMALLINT"),
+        ("range_index", "SMALLINT"),
+        ("range_type", "TEXT"),
+        ("repo", "TEXT"),
+    ),
+    key=("vulnerability_id", "entry_index", "range_index"),
+    unresolved_sql="""
+        SELECT DISTINCT 'affected entry ' || s.vulnerability_id || '#' || s.entry_index
+        FROM stg_affected_range s
+        LEFT JOIN affected_package ap
+               ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        WHERE ap.affected_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO affected_range AS t (affected_id, range_index, range_type, repo)
+        SELECT ap.affected_id, s.range_index, s.range_type, s.repo
+        FROM stg_affected_range s
+        JOIN affected_package ap
+          ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        ON CONFLICT (affected_id, range_index) DO UPDATE SET
+            range_type = EXCLUDED.range_type,
+            repo       = EXCLUDED.repo
+        WHERE (t.range_type, t.repo) IS DISTINCT FROM (EXCLUDED.range_type, EXCLUDED.repo)
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
+AFFECTED_EVENT = TableSpec(
+    table="affected_event",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("entry_index", "SMALLINT"),
+        ("range_index", "SMALLINT"),
+        ("event_order", "SMALLINT"),
+        ("event_type", "TEXT"),
+        ("version_string", "TEXT"),
+    ),
+    key=("vulnerability_id", "entry_index", "range_index", "event_order"),
+    unresolved_sql="""
+        SELECT DISTINCT 'range ' || s.vulnerability_id || '#' || s.entry_index
+                        || '/' || s.range_index
+        FROM stg_affected_event s
+        LEFT JOIN affected_package ap
+               ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        LEFT JOIN affected_range ar
+               ON ar.affected_id = ap.affected_id AND ar.range_index = s.range_index
+        WHERE ar.range_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO affected_event AS t (range_id, event_order, event_type, version_string)
+        SELECT ar.range_id, s.event_order, s.event_type, s.version_string
+        FROM stg_affected_event s
+        JOIN affected_package ap
+          ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        JOIN affected_range ar
+          ON ar.affected_id = ap.affected_id AND ar.range_index = s.range_index
+        ON CONFLICT (range_id, event_order) DO UPDATE SET
+            event_type     = EXCLUDED.event_type,
+            version_string = EXCLUDED.version_string
+        WHERE (t.event_type, t.version_string)
+              IS DISTINCT FROM (EXCLUDED.event_type, EXCLUDED.version_string)
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
+AFFECTED_VERSION = TableSpec(
+    table="affected_version",
+    columns=(
+        ("vulnerability_id", "TEXT"),
+        ("entry_index", "SMALLINT"),
+        ("version", "TEXT"),
+    ),
+    key=("vulnerability_id", "entry_index", "version"),
+    unresolved_sql="""
+        SELECT DISTINCT 'affected entry ' || s.vulnerability_id || '#' || s.entry_index
+        FROM stg_affected_version s
+        LEFT JOIN affected_package ap
+               ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        WHERE ap.affected_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO affected_version (affected_id, version)
+        SELECT ap.affected_id, s.version
+        FROM stg_affected_version s
+        JOIN affected_package ap
+          ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        ON CONFLICT (affected_id, version) DO NOTHING
+        RETURNING true AS inserted
+    """,
+)
+
+# One row per (release, affected entry). At least one of in_range / in_enumerated must be
+# set (the database enforces this).
+AFFECTED_RELEASE = TableSpec(
+    table="affected_release",
+    columns=(
+        ("canonical_name", "TEXT"),
+        ("version", "TEXT"),
+        ("vulnerability_id", "TEXT"),
+        ("entry_index", "SMALLINT"),
+        ("in_range", "BOOLEAN"),
+        ("in_enumerated", "BOOLEAN"),
+    ),
+    key=("canonical_name", "version", "vulnerability_id", "entry_index"),
+    unresolved_sql="""
+        SELECT DISTINCT 'release ' || s.canonical_name || '==' || s.version
+        FROM stg_affected_release s
+        LEFT JOIN package p ON p.canonical_name = s.canonical_name
+        LEFT JOIN release r ON r.package_id = p.package_id AND r.version = s.version
+        WHERE r.release_id IS NULL
+        UNION
+        SELECT DISTINCT 'affected entry ' || s.vulnerability_id || '#' || s.entry_index
+        FROM stg_affected_release s
+        LEFT JOIN affected_package ap
+               ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        WHERE ap.affected_id IS NULL
+        ORDER BY 1
+        LIMIT 10
+    """,
+    upsert_sql="""
+        INSERT INTO affected_release AS t (release_id, affected_id, in_range, in_enumerated)
+        SELECT r.release_id, ap.affected_id, s.in_range, s.in_enumerated
+        FROM stg_affected_release s
+        JOIN package p ON p.canonical_name = s.canonical_name
+        JOIN release r ON r.package_id = p.package_id AND r.version = s.version
+        JOIN affected_package ap
+          ON ap.vulnerability_id = s.vulnerability_id AND ap.entry_index = s.entry_index
+        ON CONFLICT (release_id, affected_id) DO UPDATE SET
+            in_range      = EXCLUDED.in_range,
+            in_enumerated = EXCLUDED.in_enumerated
+        WHERE (t.in_range, t.in_enumerated)
+              IS DISTINCT FROM (EXCLUDED.in_range, EXCLUDED.in_enumerated)
+        RETURNING (xmax = 0) AS inserted
+    """,
+)
+
 # Append-only tables: every row is inserted. Frames do not carry run_id; load() adds it.
 QUARANTINE = TableSpec(
     table="quarantine",
@@ -310,6 +491,11 @@ LOAD_ORDER: tuple[TableSpec, ...] = (
     VULNERABILITY,
     VULNERABILITY_ALIAS,
     VULNERABILITY_SEVERITY,
+    AFFECTED_PACKAGE,
+    AFFECTED_RANGE,
+    AFFECTED_EVENT,
+    AFFECTED_VERSION,
+    AFFECTED_RELEASE,
     QUARANTINE,
     DATA_QUALITY_RESULT,
 )

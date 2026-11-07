@@ -7,6 +7,7 @@ from collections import defaultdict
 import pandas as pd
 from packaging.utils import canonicalize_name
 
+from pipeline.transform.affected import transform_affected
 from pipeline.transform.common import content_hash
 from pipeline.transform.osv import transform_advisories
 from pipeline.transform.pypi import transform_project
@@ -74,6 +75,7 @@ def transform(batch) -> object:
         for advisory in page.vulns
     ]
     frames.update(transform_advisories(advisory_items))
+    frames.update(transform_affected([a for a, _ in advisory_items], frames.get("release")))
     from pipeline.orchestrate import TransformResult
 
     return TransformResult(frames=frames)
