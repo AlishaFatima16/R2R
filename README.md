@@ -2,7 +2,7 @@
 
 ETL and EDA pipeline for PyPI supply-chain risk data. It extracts package, release, dependency and vulnerability data from public APIs, validates it with Pydantic, transforms it with Pandas, loads it into PostgreSQL, and supports structured exploratory data analysis. The output is designed to be reused as an ML-ready dataset in later projects.
 
-**Status:** Week 1 - repository setup and API verification.
+**Status:** Week 1 - repository setup, validation contracts, and transformations.
 
 ## Data sources
 
@@ -43,7 +43,9 @@ copy .env.example .env
 
 Edit `.env` with your own values. Never commit `.env`.
 
-Database setup (Docker) and pipeline commands will be added here once they exist.
+Database setup (Docker) and the one-command pipeline integration will be added
+by Member 3. Member 2's fixture-driven contracts and transforms are documented
+in `docs/transformation_spec.md`.
 
 ## Working rules
 

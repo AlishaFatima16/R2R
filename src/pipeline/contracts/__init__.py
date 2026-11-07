@@ -1,0 +1,1 @@
+"""Validation contracts live in :mod:`pipeline.validate`."""
