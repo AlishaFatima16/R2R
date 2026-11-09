@@ -9,8 +9,6 @@ from packaging.utils import canonicalize_name
 
 from pipeline.transform.common import content_hash
 from pipeline.transform.osv import transform_advisories
-from pipeline.transform.depsdev import transform_dependencies
-from pipeline.validate.errors import quarantine_row
 from pipeline.transform.pypi import transform_project
 
 

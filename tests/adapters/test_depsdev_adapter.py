@@ -4,7 +4,9 @@ from pipeline.extract.http import HttpClient
 
 class Reply:
     status_code = 200
-    headers = {}
+
+    def __init__(self):
+        self.headers = {}
 
     def json(self):
         return {"nodes": [], "edges": []}
