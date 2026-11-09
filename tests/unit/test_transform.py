@@ -1,9 +1,15 @@
+
 import json
 from pathlib import Path
 
 import pandas as pd
 
 from pipeline.load.tables import (
+    AFFECTED_EVENT,
+    AFFECTED_PACKAGE,
+    AFFECTED_RANGE,
+    AFFECTED_RELEASE,
+    AFFECTED_VERSION,
     DEPENDENCY,
     PACKAGE,
     RELEASE,
@@ -50,6 +56,11 @@ def test_transform_uses_real_fixture_shapes_and_loader_columns():
         "vulnerability": VULNERABILITY,
         "vulnerability_alias": VULNERABILITY_ALIAS,
         "vulnerability_severity": VULNERABILITY_SEVERITY,
+        "affected_package": AFFECTED_PACKAGE,
+        "affected_range": AFFECTED_RANGE,
+        "affected_event": AFFECTED_EVENT,
+        "affected_version": AFFECTED_VERSION,
+        "affected_release": AFFECTED_RELEASE,
     }
     assert set(result.frames) == set(expected)
     for table, spec in expected.items():

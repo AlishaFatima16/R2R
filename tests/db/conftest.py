@@ -10,9 +10,9 @@ load_dotenv()
 @pytest.fixture
 def conn():
     """A connection whose changes are always rolled back, so tests never leave data behind."""
-    url = os.environ.get("DATABASE_URL")
+    url = os.environ.get("TEST_DATABASE_URL")
     if not url:
-        pytest.skip("DATABASE_URL is not set; database tests skipped")
+       pytest.skip("TEST_DATABASE_URL is not set; database tests skipped")
     with psycopg.connect(url) as connection:
         # Open a transaction now. load() then uses a savepoint inside it, not its own
         # commit, so the rollback below undoes everything the test loaded.

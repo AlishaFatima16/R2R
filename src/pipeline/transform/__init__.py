@@ -9,6 +9,8 @@ from packaging.utils import canonicalize_name
 
 from pipeline.transform.common import content_hash
 from pipeline.transform.osv import transform_advisories
+from pipeline.transform.depsdev import transform_dependencies
+from pipeline.validate.errors import quarantine_row
 from pipeline.transform.pypi import transform_project
 
 
@@ -73,7 +75,7 @@ def transform(batch) -> object:
         for page in batch.osv_pages
         for advisory in page.vulns
     ]
-    frames.update(transform_advisories(advisory_items))
+    frames.update(transform_advisories(advisory_items, frames.get("release")))
     from pipeline.orchestrate import TransformResult
 
     return TransformResult(frames=frames)
