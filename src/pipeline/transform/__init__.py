@@ -73,7 +73,7 @@ def transform(batch) -> object:
         for page in batch.osv_pages
         for advisory in page.vulns
     ]
-    frames.update(transform_advisories(advisory_items))
+    frames.update(transform_advisories(advisory_items, frames.get("release")))
     from pipeline.orchestrate import TransformResult
 
     return TransformResult(frames=frames)
