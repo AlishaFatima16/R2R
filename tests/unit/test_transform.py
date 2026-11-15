@@ -1,4 +1,4 @@
-
+﻿
 import json
 from pathlib import Path
 
@@ -62,7 +62,7 @@ def test_transform_uses_real_fixture_shapes_and_loader_columns():
         "affected_version": AFFECTED_VERSION,
         "affected_release": AFFECTED_RELEASE,
     }
-    assert set(result.frames) == set(expected)
+    assert set(result.frames) == set(expected) | {"data_quality_result"}
     for table, spec in expected.items():
         assert list(result.frames[table].columns) == loader_columns(spec)
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -286,10 +286,76 @@ def test_pipeline_page_data_reports_stage_counts_and_reasons():
     assert pipe["run"]["git_commit"] == "abcdef1234" and pipe["run"]["config_hash"] == "f" * 12
     stages = {s["key"]: s for s in pipe["stages"]}
     assert stages["extract"]["metrics"][0]["value"] == 3
+    assert stages["extract"]["metrics"][0]["label"] == "responses saved, all runs"
     assert stages["validate"]["metrics"][0]["value"] == 1  # 2 ok minus 1 rejected
     reasons = {r["reason"]: r["count"] for r in pipe["quarantine"]["by_reason"]}
     assert reasons["missing_field"] == 2 and reasons["empty_body"] == 0
-    assert pipe["quality"] == {"passed": 1, "failed": 0, "results": pipe["quality"]["results"]}
+    assert pipe["quality"] == {"ran": True, "passed": 1, "failed": 0,
+                               "results": pipe["quality"]["results"]}
+
+
+def test_extract_and_sources_count_raw_objects_from_all_runs():
+    """A replay run registers no raw objects (they are de-duplicated across runs)."""
+    assert "run_id" not in export.QUERIES["raw_by_source"]
+    conn = StubConnection(tiny_dataset())
+    data = export.fetch_dataset(conn, AS_OF)
+    assert not conn.params["raw_by_source"]  # no run filter was sent
+    pipe = export.build_files(data, is_sample=False)["pipeline.json"]
+    extract = next(s for s in pipe["stages"] if s["key"] == "extract")
+    assert [m["value"] for m in extract["metrics"]] == [3, 2, 1]
+    assert extract["status"] == "ok"
+    assert pipe["sources"] == [{"source": "pypi_json", "responses": 3, "ok": 2, "not_found": 1,
+                                "other_status": 0}]
+    assert pipe["sources_scope"] == "all runs"
+    # run-specific numbers still come from the latest run
+    assert pipe["run"]["id"] == 7 and pipe["run"]["status"] == "succeeded"
+    assert pipe["quarantine"]["total"] == 2
+
+
+def test_validation_passed_is_http_200_objects_minus_rejected_ones():
+    data = tiny_dataset()
+    data["pipeline"]["raw_by_source"] = [
+        {"source": "pypi_json", "responses": 10, "ok": 8, "not_found": 1, "other_status": 1}]
+    data["pipeline"]["quarantine_distinct"] = 3
+    validate = next(s for s in export.build_files(data, is_sample=False)["pipeline.json"]["stages"]
+                    if s["key"] == "validate")
+    assert [m["value"] for m in validate["metrics"]] == [5, 2, 3]
+    data["pipeline"]["quarantine_distinct"] = 99
+    validate = next(s for s in export.build_files(data, is_sample=False)["pipeline.json"]["stages"]
+                    if s["key"] == "validate")
+    assert validate["metrics"][0]["value"] == 0  # never negative
+    assert "http_status = 200" in export.QUERIES["quarantine_distinct"]
+
+
+def test_sample_data_sources_are_labelled_fixtures_not_all_runs():
+    pipe = export.build_files(tiny_dataset(), is_sample=True)["pipeline.json"]
+    assert pipe["sources_scope"] == "fixtures"
+    assert pipe["stages"][0]["metrics"][0]["label"] == "responses saved, fixtures"
+
+
+def test_quality_page_says_not_run_when_there_are_no_results():
+    data = tiny_dataset()
+    data["pipeline"]["dq_results"] = []
+    quality = export.build_files(data, is_sample=False)["pipeline.json"]["quality"]
+    assert quality == {"ran": False, "passed": 0, "failed": 0, "results": []}
+    quality = export.build_files(tiny_dataset(), is_sample=False)["pipeline.json"]["quality"]
+    assert quality["ran"] is True and quality["passed"] == 1
+
+
+def test_stale_running_runs_are_shown_as_interrupted():
+    def run(run_id, status, hours_ago):
+        started = AS_OF - timedelta(hours=hours_ago)
+        return {"run_id": run_id, "status": status, "started_at": started, "finished_at": None,
+                "git_commit": "abcdef1234", "notes": None}
+
+    data = tiny_dataset()
+    data["recent_runs"] = [run(1, "running", 7), run(2, "running", 1), run(3, "running", 6),
+                           run(4, "succeeded", 30), run(5, "failed", 30), run(6, "running", 30)]
+    history = export.build_files(data, is_sample=False)["pipeline.json"]["recent_runs"]
+    assert [(r["id"], r["status"]) for r in history] == [
+        (1, "interrupted"), (2, "running"), (3, "running"),  # exactly 6 h is not yet stale
+        (4, "succeeded"), (5, "failed"), (6, "interrupted")]
+    assert history[0]["db_status"] == "running"  # the database value is kept for reference
 
 
 def test_empty_database_still_produces_valid_files():
@@ -333,12 +399,17 @@ class StubConnection:
             "dq_results": pipe["dq_results"], "table_counts": pipe["table_counts"],
         }
         self.asked: list[str] = []
+        self.params: dict[str, dict | None] = {}
         self.read_only = False
 
     def execute(self, sql, params=None):
         name = next(key for key, text in export.QUERIES.items() if text == sql)
         self.asked.append(name)
-        return StubCursor(self.answers[name])
+        self.params[name] = params
+        rows = self.answers[name]
+        if name == "raw_by_source" and params and "run_id" in params:
+            rows = []  # a replay run (--skip-fetch) registers no raw objects of its own
+        return StubCursor(rows)
 
     def __enter__(self):
         return self

@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-15T12:31:52Z",
-  "run_id": 9,
+  "generated_at": "2026-11-15T15:05:47Z",
+  "run_id": 11,
   "is_sample": false,
   "repo_url": "https://github.com/AlishaFatima16/R2R",
   "tiers": {
@@ -23,9 +23,9 @@
     "excluded_advisories": 1
   },
   "severity_mix": {
-    "medium": 135,
     "high": 161,
     "unrated": 102,
+    "medium": 135,
     "critical": 35,
     "low": 12
   },

@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-15T12:31:52Z",
-  "run_id": 9,
+  "generated_at": "2026-11-15T15:05:47Z",
+  "run_id": 11,
   "is_sample": false,
   "repo_url": "https://github.com/AlishaFatima16/R2R",
   "run": {
-    "id": 9,
+    "id": 11,
     "status": "succeeded",
-    "started_at": "2026-11-15T11:52:17Z",
-    "finished_at": "2026-11-15T11:56:54Z",
-    "duration_s": 277.1,
-    "git_commit": "e3a1777373",
+    "started_at": "2026-11-15T13:31:55Z",
+    "finished_at": "2026-11-15T13:41:02Z",
+    "duration_s": 547.8,
+    "git_commit": "dc30a79bd9",
     "config_hash": "905e540865b8",
     "notes": "full1: 8700 raw lines, 4 quarantined, 0 fetch failures"
   },
@@ -19,19 +19,19 @@
       "key": "extract",
       "label": "Extract",
       "caption": "PyPI JSON, OSV, deps.dev to raw files",
-      "status": "unknown",
+      "status": "ok",
       "metrics": [
         {
-          "label": "responses saved",
-          "value": 0
+          "label": "responses saved, all runs",
+          "value": 8657
         },
         {
           "label": "HTTP 200",
-          "value": 0
+          "value": 8608
         },
         {
           "label": "404 / other",
-          "value": 0
+          "value": 49
         }
       ]
     },
@@ -42,15 +42,15 @@
       "status": "warn",
       "metrics": [
         {
-          "label": "passed",
-          "value": 0
+          "label": "passed, all runs",
+          "value": 8604
         },
         {
-          "label": "quarantined records",
+          "label": "quarantined records (this run)",
           "value": 4
         },
         {
-          "label": "responses rejected",
+          "label": "responses rejected (this run)",
           "value": 4
         }
       ]
@@ -97,7 +97,30 @@
       "note": null
     }
   ],
-  "sources": [],
+  "sources": [
+    {
+      "source": "depsdev",
+      "responses": 4230,
+      "ok": 4181,
+      "not_found": 49,
+      "other_status": 0
+    },
+    {
+      "source": "osv",
+      "responses": 77,
+      "ok": 77,
+      "not_found": 0,
+      "other_status": 0
+    },
+    {
+      "source": "pypi_json",
+      "responses": 4350,
+      "ok": 4350,
+      "not_found": 0,
+      "other_status": 0
+    }
+  ],
+  "sources_scope": "all runs",
   "quarantine": {
     "total": 4,
     "by_reason": [
@@ -139,7 +162,7 @@
     },
     "samples": [
       {
-        "id": 12,
+        "id": 20,
         "raw_object_id": 3645,
         "stage": "validate",
         "reason": "invalid_value",
@@ -147,7 +170,7 @@
         "message": "Value error, nodes must contain the root node"
       },
       {
-        "id": 11,
+        "id": 19,
         "raw_object_id": 2174,
         "stage": "validate",
         "reason": "invalid_value",
@@ -155,7 +178,7 @@
         "message": "Value error, nodes must contain the root node"
       },
       {
-        "id": 10,
+        "id": 18,
         "raw_object_id": 2007,
         "stage": "validate",
         "reason": "invalid_value",
@@ -163,7 +186,7 @@
         "message": "Value error, nodes must contain the root node"
       },
       {
-        "id": 9,
+        "id": 17,
         "raw_object_id": 1656,
         "stage": "validate",
         "reason": "invalid_value",
@@ -173,9 +196,75 @@
     ]
   },
   "quality": {
-    "passed": 0,
+    "ran": true,
+    "passed": 8,
     "failed": 0,
-    "results": []
+    "results": [
+      {
+        "check": "advisory_has_publication_date",
+        "dimension": "completeness",
+        "table": "vulnerability",
+        "value": 1,
+        "threshold": 0.99,
+        "passed": true
+      },
+      {
+        "check": "affected_release_range_evaluated",
+        "dimension": "completeness",
+        "table": "affected_release",
+        "value": 0.9749087390908331,
+        "threshold": 0.9,
+        "passed": true
+      },
+      {
+        "check": "seed_packages_have_releases",
+        "dimension": "completeness",
+        "table": "package",
+        "value": 1,
+        "threshold": 1,
+        "passed": true
+      },
+      {
+        "check": "advisory_dates_in_order",
+        "dimension": "consistency",
+        "table": "vulnerability",
+        "value": 1,
+        "threshold": 0.99,
+        "passed": true
+      },
+      {
+        "check": "release_natural_key_unique",
+        "dimension": "uniqueness",
+        "table": "release",
+        "value": 0,
+        "threshold": 0,
+        "passed": true
+      },
+      {
+        "check": "dependency_parse_rate",
+        "dimension": "validity",
+        "table": "dependency",
+        "value": 0.9998834770449778,
+        "threshold": 0.95,
+        "passed": true
+      },
+      {
+        "check": "package_names_canonical",
+        "dimension": "validity",
+        "table": "package",
+        "value": 1,
+        "threshold": 1,
+        "passed": true
+      },
+      {
+        "check": "release_version_valid",
+        "dimension": "validity",
+        "table": "release",
+        "value": 0.9972527472527473,
+        "threshold": 0.99,
+        "passed": true
+      }
+    ]
   },
   "tables": [
     {
@@ -216,17 +305,36 @@
     },
     {
       "name": "quarantine",
-      "rows": 12
+      "rows": 20
     },
     {
       "name": "data_quality_result",
-      "rows": 0
+      "rows": 8
     }
   ],
   "recent_runs": [
     {
+      "id": 11,
+      "status": "succeeded",
+      "db_status": "succeeded",
+      "started_at": "2026-11-15T13:31:55Z",
+      "finished_at": "2026-11-15T13:41:02Z",
+      "git_commit": "dc30a79bd9",
+      "notes": "full1: 8700 raw lines, 4 quarantined, 0 fetch failures"
+    },
+    {
+      "id": 10,
+      "status": "running",
+      "db_status": "running",
+      "started_at": "2026-11-15T13:26:05Z",
+      "finished_at": null,
+      "git_commit": "dc30a79bd9",
+      "notes": "full1"
+    },
+    {
       "id": 9,
       "status": "succeeded",
+      "db_status": "succeeded",
       "started_at": "2026-11-15T11:52:17Z",
       "finished_at": "2026-11-15T11:56:54Z",
       "git_commit": "e3a1777373",
@@ -235,6 +343,7 @@
     {
       "id": 8,
       "status": "succeeded",
+      "db_status": "succeeded",
       "started_at": "2026-11-15T11:42:39Z",
       "finished_at": "2026-11-15T11:46:17Z",
       "git_commit": "f21ab5ecb8",
@@ -243,6 +352,7 @@
     {
       "id": 7,
       "status": "failed",
+      "db_status": "failed",
       "started_at": "2026-11-15T09:57:07Z",
       "finished_at": "2026-11-15T10:59:53Z",
       "git_commit": "f21ab5ecb8",
@@ -251,6 +361,7 @@
     {
       "id": 6,
       "status": "succeeded",
+      "db_status": "succeeded",
       "started_at": "2026-11-15T09:56:32Z",
       "finished_at": "2026-11-15T09:57:05Z",
       "git_commit": "f21ab5ecb8",
@@ -258,7 +369,8 @@
     },
     {
       "id": 5,
-      "status": "running",
+      "status": "interrupted",
+      "db_status": "running",
       "started_at": "2026-11-07T17:48:05Z",
       "finished_at": null,
       "git_commit": "5f3147499c",
@@ -267,26 +379,11 @@
     {
       "id": 4,
       "status": "succeeded",
+      "db_status": "succeeded",
       "started_at": "2026-11-07T17:46:54Z",
       "finished_at": "2026-11-07T17:46:55Z",
       "git_commit": "fa6f4879a3",
       "notes": "test3: 19 raw lines, 0 quarantined, 0 fetch failures"
-    },
-    {
-      "id": 3,
-      "status": "failed",
-      "started_at": "2026-11-07T17:43:22Z",
-      "finished_at": "2026-11-07T17:43:31Z",
-      "git_commit": "fa6f4879a3",
-      "notes": "LoadError: No loader yet for table(s): ['affected_event', 'affected_package', 'affected_range', 'affected_release', 'affected_version']"
-    },
-    {
-      "id": 2,
-      "status": "succeeded",
-      "started_at": "2026-11-07T17:32:56Z",
-      "finished_at": "2026-11-07T17:33:05Z",
-      "git_commit": "de38c5ded6",
-      "notes": "test2: 19 raw lines, 0 quarantined, 0 fetch failures"
     }
   ],
   "excluded_advisories": 1,
