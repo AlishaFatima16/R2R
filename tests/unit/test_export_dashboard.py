@@ -1,4 +1,4 @@
-"""Tests for the dashboard exporter. No database: rows are plain dicts, the connection is a stub."""
+﻿"""Tests for the dashboard exporter. No database: rows are plain dicts, the connection is a stub."""
 
 from __future__ import annotations
 
@@ -363,11 +363,11 @@ def test_main_exports_from_a_stub_connection_without_leaking_the_url(tmp_path, m
     assert seen == [secret_url] and conn.read_only is True
     assert {"run_latest", "packages", "releases", "advisories", "exposure"} <= set(conn.asked)
 
-    overview = json.loads((out / "overview.json").read_text())
+    overview = json.loads((out / "overview.json").read_text(encoding="utf-8"))
     assert overview["is_sample"] is False and overview["run_id"] == 7
     assert (out / "packages" / "demo.json").exists() and (out / "pipeline.json").exists()
     for path in out.rglob("*.json"):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         assert "very-secret-pw" not in text and "postgresql://" not in text
         json.loads(text)
 
@@ -385,7 +385,7 @@ def test_write_files_replaces_stale_package_files(tmp_path):
     (tmp_path / "packages" / "old.json").write_text("{}")
     export.write_files({"packages/new.json": {"a": 1}, "overview.json": {"b": 2}}, tmp_path)
     assert sorted(p.name for p in (tmp_path / "packages").iterdir()) == ["new.json"]
-    assert json.loads((tmp_path / "overview.json").read_text()) == {"b": 2}
+    assert json.loads((tmp_path / "overview.json").read_text(encoding="utf-8")) == {"b": 2}
 
 
 # ------------------------------------------------------------------ shipped sample data
@@ -396,20 +396,20 @@ DATA_DIR = ROOT / "dashboard" / "data"
 
 @pytest.mark.skipif(not (DATA_DIR / "overview.json").exists(), reason="no dashboard/data yet")
 def test_shipped_data_files_are_consistent_and_small():
-    overview = json.loads((DATA_DIR / "overview.json").read_text())
+    overview = json.loads((DATA_DIR / "overview.json").read_text(encoding="utf-8"))
     for key in ("generated_at", "run_id", "is_sample", "headline", "time_to_fix"):
         assert key in overview
-    listed = json.loads((DATA_DIR / "packages.json").read_text())["packages"]
+    listed = json.loads((DATA_DIR / "packages.json").read_text(encoding="utf-8"))["packages"]
     for row in listed:
-        package = json.loads((DATA_DIR / "packages" / f"{row['n']}.json").read_text())
+        package = json.loads((DATA_DIR / "packages" / f"{row['n']}.json").read_text(encoding="utf-8"))
         assert package["is_sample"] == overview["is_sample"]
         assert package["stats"]["releases"] == row["releases"] == len(package["releases"])
         assert package["stats"]["advisories"] == row["advisories"] == len(package["advisories"])
-    index = json.loads((DATA_DIR / "advisories.json").read_text())["advisories"]
+    index = json.loads((DATA_DIR / "advisories.json").read_text(encoding="utf-8"))["advisories"]
     assert all(set(item["pk"]) <= {r["n"] for r in listed} for item in index)
     total = sum(p.stat().st_size for p in DATA_DIR.rglob("*") if p.is_file())
     assert total < 5 * 1024 * 1024
-    assert "postgresql://" not in "".join(p.read_text() for p in DATA_DIR.rglob("*.json"))
+    assert "postgresql://" not in "".join(p.read_text(encoding="utf-8") for p in DATA_DIR.rglob("*.json"))
 
 
 # ------------------------------------------------------ real fixtures, no database
@@ -423,10 +423,10 @@ def test_sample_builder_runs_the_pipeline_on_the_real_fixtures(tmp_path):
     sample = load_script("build_sample_dashboard_data")
     out = tmp_path / "data"
     assert sample.main(["--out", str(out)]) == 0
-    overview = json.loads((out / "overview.json").read_text())
+    overview = json.loads((out / "overview.json").read_text(encoding="utf-8"))
     assert overview["is_sample"] is True and overview["run_id"] is None
     assert overview["headline"]["packages"] >= 1 and overview["headline"]["releases"] > 0
-    pipe = json.loads((out / "pipeline.json").read_text())
+    pipe = json.loads((out / "pipeline.json").read_text(encoding="utf-8"))
     assert pipe["run"]["status"] == "sample"
     assert {s["key"] for s in pipe["stages"]} == {"extract", "validate", "transform", "load"}
     assert next(s for s in pipe["stages"] if s["key"] == "load")["status"] == "skipped"
