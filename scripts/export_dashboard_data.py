@@ -73,6 +73,8 @@ FIX_BINS = (
     ("over 5 years", 1826, math.inf),
 )
 MAX_DEPENDENCIES = 300
+# A run still marked "running" after this long was cut off (crash, closed terminal).
+STALE_RUN_HOURS = 6
 
 # ---------------------------------------------------------------------------------- queries
 
@@ -156,13 +158,14 @@ QUERIES: dict[str, str] = {
         WHERE root_release_id = ANY(%(release_ids)s)
         ORDER BY root_release_id, depth, dependency_package_name
     """,
+    # All runs on purpose: raw_object rows are de-duplicated across runs by
+    # (source_id, request_url, sha256), so a replay run (--skip-fetch) registers none of its own.
     "raw_by_source": """
         SELECT s.name AS source, COUNT(*) AS responses,
                COUNT(*) FILTER (WHERE ro.http_status = 200) AS ok,
                COUNT(*) FILTER (WHERE ro.http_status = 404) AS not_found,
                COUNT(*) FILTER (WHERE ro.http_status NOT IN (200, 404)) AS other_status
         FROM raw_object AS ro JOIN source AS s ON s.source_id = ro.source_id
-        WHERE ro.run_id = %(run_id)s
         GROUP BY s.name ORDER BY s.name
     """,
     "quarantine_counts": """
@@ -170,9 +173,12 @@ QUERIES: dict[str, str] = {
         FROM quarantine WHERE run_id = %(run_id)s
         GROUP BY stage, reason_code ORDER BY n DESC, reason_code
     """,
+    # HTTP-200 responses the latest run's validation rejected: subtracted from the 200s to get
+    # "passed". Replay runs re-validate every raw object, so the latest run covers all of them.
     "quarantine_distinct": """
-        SELECT COUNT(DISTINCT raw_object_id) AS n
-        FROM quarantine WHERE run_id = %(run_id)s AND stage = 'validate'
+        SELECT COUNT(DISTINCT q.raw_object_id) AS n
+        FROM quarantine AS q JOIN raw_object AS ro ON ro.raw_object_id = q.raw_object_id
+        WHERE q.run_id = %(run_id)s AND q.stage = 'validate' AND ro.http_status = 200
     """,
     "quarantine_samples": """
         SELECT quarantine_id, raw_object_id, stage, reason_code, field_path,
@@ -224,12 +230,15 @@ def fetch_dataset(conn, as_of: datetime) -> dict:
     data["resolved"] = fetch_all(conn, q["resolved"], ids)
 
     run_id = (data["run_latest"] or {}).get("run_id")
-    pipeline: dict = {"run_id": run_id, "table_counts": fetch_all(conn, q["table_counts"])}
+    pipeline: dict = {
+        "run_id": run_id,
+        "table_counts": fetch_all(conn, q["table_counts"]),
+        "raw_by_source": fetch_all(conn, q["raw_by_source"]),  # all runs
+    }
     if run_id is not None:
         rid = {"run_id": run_id}
         distinct = fetch_all(conn, q["quarantine_distinct"], rid)
         pipeline.update(
-            raw_by_source=fetch_all(conn, q["raw_by_source"], rid),
             quarantine_counts=fetch_all(conn, q["quarantine_counts"], rid),
             quarantine_distinct=int(distinct[0]["n"]) if distinct else 0,
             quarantine_samples=fetch_all(conn, q["quarantine_samples"], rid),
@@ -863,8 +872,20 @@ def _overview(data, meta, package_files, group_published, group_level, group_tie
     }
 
 
+def _run_status(row: dict, as_of: datetime | None) -> str | None:
+    """Database status, except a long-stale 'running' run is shown as 'interrupted'."""
+    status = row.get("status")
+    started = as_dt(row.get("started_at"))
+    if (status == "running" and started and as_of
+            and (as_of - started).total_seconds() > STALE_RUN_HOURS * 3600):
+        return "interrupted"
+    return status
+
+
 def _pipeline(data: dict, meta: dict, is_sample: bool, repo_url: str) -> dict:
     pipe = data.get("pipeline") or {}
+    as_of = as_dt(data.get("as_of"))
+    scope = "fixtures" if is_sample else "all runs"
     run = data.get("run_latest") or data.get("run") or {}
     started, finished = as_dt(run.get("started_at")), as_dt(run.get("finished_at"))
     run_out = {
@@ -899,15 +920,15 @@ def _pipeline(data: dict, meta: dict, is_sample: bool, repo_url: str) -> dict:
     stages = [
         {"key": "extract", "label": "Extract", "caption": "PyPI JSON, OSV, deps.dev to raw files",
          "status": "ok" if total_raw else "unknown", "metrics": [
-             {"label": "responses saved", "value": total_raw},
+             {"label": f"responses saved, {scope}", "value": total_raw},
              {"label": "HTTP 200", "value": ok_raw},
              {"label": "404 / other", "value": sum(r["not_found"] + r["other_status"]
                                                     for r in raw)}]},
         {"key": "validate", "label": "Validate", "caption": "Pydantic contracts per response",
          "status": "warn" if total_q else ("ok" if total_raw else "unknown"), "metrics": [
-             {"label": "passed", "value": max(ok_raw - bad_raw, 0)},
-             {"label": "quarantined records", "value": by_stage.get("validate", 0)},
-             {"label": "responses rejected", "value": bad_raw}]},
+             {"label": f"passed, {scope}", "value": max(ok_raw - bad_raw, 0)},
+             {"label": "quarantined records (this run)", "value": by_stage.get("validate", 0)},
+             {"label": "responses rejected (this run)", "value": bad_raw}]},
         {"key": "transform", "label": "Transform", "caption": "pandas frames in loader shape",
          "status": "ok" if table_rows.get("release") else "unknown", "metrics": [
              {"label": "package rows", "value": table_rows.get("package", 0)},
@@ -928,6 +949,7 @@ def _pipeline(data: dict, meta: dict, is_sample: bool, repo_url: str) -> dict:
     ]
     return {
         **meta, "repo_url": repo_url, "run": run_out, "stages": stages, "sources": raw,
+        "sources_scope": scope,
         "quarantine": {
             "total": total_q,
             "by_reason": [{"reason": k, "count": v} for k, v in by_reason.items()],
@@ -938,13 +960,16 @@ def _pipeline(data: dict, meta: dict, is_sample: bool, repo_url: str) -> dict:
                         for r in pipe.get("quarantine_samples", [])],
         },
         "quality": {
+            # ran is False when no data_quality_result rows exist: the page then says the rules
+            # were not run instead of reporting "0 passed, 0 failed".
+            "ran": bool(dq),
             "passed": sum(1 for r in dq if r["passed"]), "failed": sum(1 for r in dq
                                                                          if not r["passed"]),
             "results": dq,
         },
         "tables": [{"name": n, "rows": table_rows[n]} for n in TABLES if n in table_rows],
-        "recent_runs": [{"id": r["run_id"], "status": r["status"],
-                         "started_at": iso(r["started_at"]),
+        "recent_runs": [{"id": r["run_id"], "status": _run_status(r, as_of),
+                         "db_status": r["status"], "started_at": iso(r["started_at"]),
                          "finished_at": iso(r.get("finished_at")),
                          "git_commit": (r.get("git_commit") or "")[:10] or None,
                          "notes": trim(r.get("notes"), 160)} for r in data.get("recent_runs", [])],

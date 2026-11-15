@@ -7,6 +7,7 @@ from collections import defaultdict
 import pandas as pd
 from packaging.utils import canonicalize_name
 
+from pipeline.quality.rules import quality_frame
 from pipeline.transform.common import content_hash
 from pipeline.transform.depsdev import transform_dependencies
 from pipeline.transform.osv import transform_advisories
@@ -81,7 +82,11 @@ def transform(batch) -> object:
     frames.update(transform_advisories(advisory_items, frames.get("release")))
     from pipeline.orchestrate import TransformResult
 
-    return TransformResult(frames=_dedupe(frames))
+    frames = _dedupe(frames)
+    quality = quality_frame(frames)
+    if not quality.empty:
+        frames["data_quality_result"] = quality
+    return TransformResult(frames=frames)
 
 
 def _resolved_nodes(batch, releases):

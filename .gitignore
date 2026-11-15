@@ -31,3 +31,5 @@ exports/*
 Thumbs.db
 
 !dashboard/data/
+
+.pytest_tmp/
