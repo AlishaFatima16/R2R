@@ -1,0 +1,294 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-15T12:31:52Z",
+  "run_id": 9,
+  "is_sample": false,
+  "repo_url": "https://github.com/AlishaFatima16/R2R",
+  "run": {
+    "id": 9,
+    "status": "succeeded",
+    "started_at": "2026-11-15T11:52:17Z",
+    "finished_at": "2026-11-15T11:56:54Z",
+    "duration_s": 277.1,
+    "git_commit": "e3a1777373",
+    "config_hash": "905e540865b8",
+    "notes": "full1: 8700 raw lines, 4 quarantined, 0 fetch failures"
+  },
+  "stages": [
+    {
+      "key": "extract",
+      "label": "Extract",
+      "caption": "PyPI JSON, OSV, deps.dev to raw files",
+      "status": "unknown",
+      "metrics": [
+        {
+          "label": "responses saved",
+          "value": 0
+        },
+        {
+          "label": "HTTP 200",
+          "value": 0
+        },
+        {
+          "label": "404 / other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "key": "validate",
+      "label": "Validate",
+      "caption": "Pydantic contracts per response",
+      "status": "warn",
+      "metrics": [
+        {
+          "label": "passed",
+          "value": 0
+        },
+        {
+          "label": "quarantined records",
+          "value": 4
+        },
+        {
+          "label": "responses rejected",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "key": "transform",
+      "label": "Transform",
+      "caption": "pandas frames in loader shape",
+      "status": "ok",
+      "metrics": [
+        {
+          "label": "package rows",
+          "value": 1166
+        },
+        {
+          "label": "release rows",
+          "value": 20384
+        },
+        {
+          "label": "quarantined here",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "key": "load",
+      "label": "Load",
+      "caption": "PostgreSQL upserts, one transaction",
+      "status": "ok",
+      "metrics": [
+        {
+          "label": "release rows",
+          "value": 20384
+        },
+        {
+          "label": "dependency rows",
+          "value": 77238
+        },
+        {
+          "label": "vulnerability rows",
+          "value": 2422
+        }
+      ],
+      "note": null
+    }
+  ],
+  "sources": [],
+  "quarantine": {
+    "total": 4,
+    "by_reason": [
+      {
+        "reason": "missing_field",
+        "count": 0
+      },
+      {
+        "reason": "type_error",
+        "count": 0
+      },
+      {
+        "reason": "invalid_timestamp",
+        "count": 0
+      },
+      {
+        "reason": "malformed_identifier",
+        "count": 0
+      },
+      {
+        "reason": "unexpected_structure",
+        "count": 0
+      },
+      {
+        "reason": "empty_body",
+        "count": 0
+      },
+      {
+        "reason": "duplicate_conflict",
+        "count": 0
+      },
+      {
+        "reason": "invalid_value",
+        "count": 4
+      }
+    ],
+    "by_stage": {
+      "validate": 4
+    },
+    "samples": [
+      {
+        "id": 12,
+        "raw_object_id": 3645,
+        "stage": "validate",
+        "reason": "invalid_value",
+        "field_path": "nodes",
+        "message": "Value error, nodes must contain the root node"
+      },
+      {
+        "id": 11,
+        "raw_object_id": 2174,
+        "stage": "validate",
+        "reason": "invalid_value",
+        "field_path": "nodes",
+        "message": "Value error, nodes must contain the root node"
+      },
+      {
+        "id": 10,
+        "raw_object_id": 2007,
+        "stage": "validate",
+        "reason": "invalid_value",
+        "field_path": "nodes",
+        "message": "Value error, nodes must contain the root node"
+      },
+      {
+        "id": 9,
+        "raw_object_id": 1656,
+        "stage": "validate",
+        "reason": "invalid_value",
+        "field_path": "nodes",
+        "message": "Value error, nodes must contain the root node"
+      }
+    ]
+  },
+  "quality": {
+    "passed": 0,
+    "failed": 0,
+    "results": []
+  },
+  "tables": [
+    {
+      "name": "package",
+      "rows": 1166
+    },
+    {
+      "name": "release",
+      "rows": 20384
+    },
+    {
+      "name": "dependency",
+      "rows": 77238
+    },
+    {
+      "name": "vulnerability",
+      "rows": 2422
+    },
+    {
+      "name": "vulnerability_alias",
+      "rows": 5534
+    },
+    {
+      "name": "affected_package",
+      "rows": 2894
+    },
+    {
+      "name": "affected_release",
+      "rows": 705943
+    },
+    {
+      "name": "resolved_node",
+      "rows": 42340
+    },
+    {
+      "name": "raw_object",
+      "rows": 8657
+    },
+    {
+      "name": "quarantine",
+      "rows": 12
+    },
+    {
+      "name": "data_quality_result",
+      "rows": 0
+    }
+  ],
+  "recent_runs": [
+    {
+      "id": 9,
+      "status": "succeeded",
+      "started_at": "2026-11-15T11:52:17Z",
+      "finished_at": "2026-11-15T11:56:54Z",
+      "git_commit": "e3a1777373",
+      "notes": "full1: 8700 raw lines, 4 quarantined, 0 fetch failures"
+    },
+    {
+      "id": 8,
+      "status": "succeeded",
+      "started_at": "2026-11-15T11:42:39Z",
+      "finished_at": "2026-11-15T11:46:17Z",
+      "git_commit": "f21ab5ecb8",
+      "notes": "full1: 8700 raw lines, 4 quarantined, 0 fetch failures"
+    },
+    {
+      "id": 7,
+      "status": "failed",
+      "started_at": "2026-11-15T09:57:07Z",
+      "finished_at": "2026-11-15T10:59:53Z",
+      "git_commit": "f21ab5ecb8",
+      "notes": "LoadError: vulnerability: duplicate natural keys in one batch, e.g. [{'vulnerability_id': 'GHSA-4vwq-x64q-j4cj'}, {'vulnerability_id': 'GHSA-92mr-v722-f48m'},…"
+    },
+    {
+      "id": 6,
+      "status": "succeeded",
+      "started_at": "2026-11-15T09:56:32Z",
+      "finished_at": "2026-11-15T09:57:05Z",
+      "git_commit": "f21ab5ecb8",
+      "notes": "test4: 34 raw lines, 0 quarantined, 0 fetch failures"
+    },
+    {
+      "id": 5,
+      "status": "running",
+      "started_at": "2026-11-07T17:48:05Z",
+      "finished_at": null,
+      "git_commit": "5f3147499c",
+      "notes": "full1"
+    },
+    {
+      "id": 4,
+      "status": "succeeded",
+      "started_at": "2026-11-07T17:46:54Z",
+      "finished_at": "2026-11-07T17:46:55Z",
+      "git_commit": "fa6f4879a3",
+      "notes": "test3: 19 raw lines, 0 quarantined, 0 fetch failures"
+    },
+    {
+      "id": 3,
+      "status": "failed",
+      "started_at": "2026-11-07T17:43:22Z",
+      "finished_at": "2026-11-07T17:43:31Z",
+      "git_commit": "fa6f4879a3",
+      "notes": "LoadError: No loader yet for table(s): ['affected_event', 'affected_package', 'affected_range', 'affected_release', 'affected_version']"
+    },
+    {
+      "id": 2,
+      "status": "succeeded",
+      "started_at": "2026-11-07T17:32:56Z",
+      "finished_at": "2026-11-07T17:33:05Z",
+      "git_commit": "de38c5ded6",
+      "notes": "test2: 19 raw lines, 0 quarantined, 0 fetch failures"
+    }
+  ],
+  "excluded_advisories": 1,
+  "sample_note": null
+}
