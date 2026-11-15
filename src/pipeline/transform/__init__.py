@@ -8,6 +8,7 @@ import pandas as pd
 from packaging.utils import canonicalize_name
 
 from pipeline.transform.common import content_hash
+from pipeline.transform.depsdev import transform_dependencies
 from pipeline.transform.osv import transform_advisories
 from pipeline.transform.pypi import transform_project
 
@@ -43,6 +44,10 @@ def transform(batch) -> object:
     target_names = set()
     if "dependency" in frames:
         target_names = set(frames["dependency"]["target_name"].dropna())
+    resolved = _resolved_nodes(batch, frames.get("release"))
+    if not resolved.empty:
+        frames["resolved_node"] = resolved
+        target_names |= set(resolved["canonical_name"])
     existing = set(package_frame.get("canonical_name", pd.Series(dtype=str)))
     stubs = [
         {
@@ -77,6 +82,30 @@ def transform(batch) -> object:
     from pipeline.orchestrate import TransformResult
 
     return TransformResult(frames=_dedupe(frames))
+
+
+def _resolved_nodes(batch, releases):
+    """Depth of every resolved dependency, from the deps.dev graphs saved for each release."""
+    parts = []
+    for item in getattr(batch, "depsdev_graphs", []):
+        if item.graph is None:
+            continue
+        try:
+            parts.append(
+                transform_dependencies(item.graph, root_name=item.name, root_version=item.version)
+            )
+        except ValueError:
+            continue  # error graph or root mismatch: nothing trustworthy to load
+    parts = [part for part in parts if not part.empty]
+    if not parts:
+        return pd.DataFrame()
+    frame = pd.concat(parts, ignore_index=True)
+    if releases is None or releases.empty:
+        return pd.DataFrame()
+    roots = releases[["canonical_name", "version"]].rename(
+        columns={"canonical_name": "root_canonical_name", "version": "root_version"}
+    )
+    return frame.merge(roots, on=["root_canonical_name", "root_version"], how="inner")
 
 
 def _dedupe(frames):

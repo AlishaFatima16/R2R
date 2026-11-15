@@ -1,0 +1,409 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-15T12:31:52Z",
+  "run_id": 9,
+  "is_sample": false,
+  "repo_url": "https://github.com/AlishaFatima16/R2R",
+  "tiers": {
+    "A": 80,
+    "B": 40
+  },
+  "headline": {
+    "packages": 120,
+    "packages_tier_a": 80,
+    "packages_tier_b": 40,
+    "releases": 20384,
+    "releases_tier_a": 13765,
+    "advisories": 445,
+    "advisory_records": 797,
+    "affected_releases": 5021,
+    "share_affected": 0.3648,
+    "median_fix_days": 542.2,
+    "fix_windows": 184,
+    "excluded_advisories": 1
+  },
+  "severity_mix": {
+    "medium": 135,
+    "high": 161,
+    "unrated": 102,
+    "critical": 35,
+    "low": 12
+  },
+  "advisories_by_year": [
+    {
+      "year": 2011,
+      "low": 0,
+      "medium": 1,
+      "high": 0,
+      "critical": 0,
+      "unrated": 0
+    },
+    {
+      "year": 2013,
+      "low": 0,
+      "medium": 1,
+      "high": 2,
+      "critical": 0,
+      "unrated": 0
+    },
+    {
+      "year": 2014,
+      "low": 0,
+      "medium": 4,
+      "high": 3,
+      "critical": 1,
+      "unrated": 1
+    },
+    {
+      "year": 2015,
+      "low": 0,
+      "medium": 0,
+      "high": 2,
+      "critical": 0,
+      "unrated": 1
+    },
+    {
+      "year": 2016,
+      "low": 0,
+      "medium": 4,
+      "high": 1,
+      "critical": 2,
+      "unrated": 0
+    },
+    {
+      "year": 2017,
+      "low": 1,
+      "medium": 1,
+      "high": 5,
+      "critical": 0,
+      "unrated": 0
+    },
+    {
+      "year": 2018,
+      "low": 0,
+      "medium": 2,
+      "high": 3,
+      "critical": 2,
+      "unrated": 0
+    },
+    {
+      "year": 2019,
+      "low": 0,
+      "medium": 2,
+      "high": 4,
+      "critical": 1,
+      "unrated": 0
+    },
+    {
+      "year": 2020,
+      "low": 0,
+      "medium": 5,
+      "high": 9,
+      "critical": 4,
+      "unrated": 1
+    },
+    {
+      "year": 2021,
+      "low": 2,
+      "medium": 11,
+      "high": 16,
+      "critical": 6,
+      "unrated": 0
+    },
+    {
+      "year": 2022,
+      "low": 0,
+      "medium": 3,
+      "high": 6,
+      "critical": 4,
+      "unrated": 5
+    },
+    {
+      "year": 2023,
+      "low": 1,
+      "medium": 11,
+      "high": 10,
+      "critical": 0,
+      "unrated": 5
+    },
+    {
+      "year": 2024,
+      "low": 2,
+      "medium": 15,
+      "high": 14,
+      "critical": 3,
+      "unrated": 3
+    },
+    {
+      "year": 2025,
+      "low": 0,
+      "medium": 5,
+      "high": 10,
+      "critical": 1,
+      "unrated": 7
+    },
+    {
+      "year": 2026,
+      "low": 6,
+      "medium": 70,
+      "high": 76,
+      "critical": 11,
+      "unrated": 79
+    }
+  ],
+  "affected_by_year": [
+    {
+      "year": 2005,
+      "releases": 3,
+      "affected": 0,
+      "share": 0.0
+    },
+    {
+      "year": 2006,
+      "releases": 14,
+      "affected": 11,
+      "share": 0.7857
+    },
+    {
+      "year": 2007,
+      "releases": 22,
+      "affected": 17,
+      "share": 0.7727
+    },
+    {
+      "year": 2008,
+      "releases": 29,
+      "affected": 20,
+      "share": 0.6897
+    },
+    {
+      "year": 2009,
+      "releases": 35,
+      "affected": 24,
+      "share": 0.6857
+    },
+    {
+      "year": 2010,
+      "releases": 67,
+      "affected": 47,
+      "share": 0.7015
+    },
+    {
+      "year": 2011,
+      "releases": 115,
+      "affected": 90,
+      "share": 0.7826
+    },
+    {
+      "year": 2012,
+      "releases": 135,
+      "affected": 105,
+      "share": 0.7778
+    },
+    {
+      "year": 2013,
+      "releases": 181,
+      "affected": 100,
+      "share": 0.5525
+    },
+    {
+      "year": 2014,
+      "releases": 324,
+      "affected": 197,
+      "share": 0.608
+    },
+    {
+      "year": 2015,
+      "releases": 385,
+      "affected": 219,
+      "share": 0.5688
+    },
+    {
+      "year": 2016,
+      "releases": 548,
+      "affected": 284,
+      "share": 0.5182
+    },
+    {
+      "year": 2017,
+      "releases": 563,
+      "affected": 262,
+      "share": 0.4654
+    },
+    {
+      "year": 2018,
+      "releases": 970,
+      "affected": 382,
+      "share": 0.3938
+    },
+    {
+      "year": 2019,
+      "releases": 1106,
+      "affected": 434,
+      "share": 0.3924
+    },
+    {
+      "year": 2020,
+      "releases": 1200,
+      "affected": 397,
+      "share": 0.3308
+    },
+    {
+      "year": 2021,
+      "releases": 1139,
+      "affected": 315,
+      "share": 0.2766
+    },
+    {
+      "year": 2022,
+      "releases": 1129,
+      "affected": 271,
+      "share": 0.24
+    },
+    {
+      "year": 2023,
+      "releases": 1785,
+      "affected": 732,
+      "share": 0.4101
+    },
+    {
+      "year": 2024,
+      "releases": 1205,
+      "affected": 295,
+      "share": 0.2448
+    },
+    {
+      "year": 2025,
+      "releases": 1311,
+      "affected": 419,
+      "share": 0.3196
+    },
+    {
+      "year": 2026,
+      "releases": 1446,
+      "affected": 363,
+      "share": 0.251
+    }
+  ],
+  "time_to_fix": {
+    "bins": [
+      {
+        "label": "under 1 week",
+        "from": 0,
+        "to": 7,
+        "count": 5
+      },
+      {
+        "label": "1-4 weeks",
+        "from": 7,
+        "to": 30,
+        "count": 13
+      },
+      {
+        "label": "1-3 months",
+        "from": 30,
+        "to": 90,
+        "count": 16
+      },
+      {
+        "label": "3-6 months",
+        "from": 90,
+        "to": 180,
+        "count": 18
+      },
+      {
+        "label": "6-12 months",
+        "from": 180,
+        "to": 365,
+        "count": 22
+      },
+      {
+        "label": "1-2 years",
+        "from": 365,
+        "to": 730,
+        "count": 27
+      },
+      {
+        "label": "2-5 years",
+        "from": 730,
+        "to": 1826,
+        "count": 28
+      },
+      {
+        "label": "over 5 years",
+        "from": 1826,
+        "to": null,
+        "count": 55
+      }
+    ],
+    "median_days": 542.2,
+    "n": 184,
+    "excluded": {
+      "since_first_release": 316,
+      "still_open": 0,
+      "fix_date_unknown": 15
+    }
+  },
+  "top_packages": [
+    {
+      "name": "pillow",
+      "advisories": 121,
+      "share_affected": 0.9907,
+      "max_level": "critical"
+    },
+    {
+      "name": "aiohttp",
+      "advisories": 55,
+      "share_affected": 0.9873,
+      "max_level": "critical"
+    },
+    {
+      "name": "litellm",
+      "advisories": 45,
+      "share_affected": 0.9087,
+      "max_level": "critical"
+    },
+    {
+      "name": "pyjwt",
+      "advisories": 25,
+      "share_affected": 0.9655,
+      "max_level": "critical"
+    },
+    {
+      "name": "cryptography",
+      "advisories": 24,
+      "share_affected": 0.9812,
+      "max_level": "critical"
+    },
+    {
+      "name": "virtualenv",
+      "advisories": 24,
+      "share_affected": 0.9747,
+      "max_level": "critical"
+    },
+    {
+      "name": "urllib3",
+      "advisories": 22,
+      "share_affected": 0.9908,
+      "max_level": "critical"
+    },
+    {
+      "name": "filelock",
+      "advisories": 20,
+      "share_affected": 0.9306,
+      "max_level": "high"
+    },
+    {
+      "name": "pip",
+      "advisories": 13,
+      "share_affected": 0.9752,
+      "max_level": "high"
+    },
+    {
+      "name": "jinja2",
+      "advisories": 10,
+      "share_affected": 0.9808,
+      "max_level": "high"
+    }
+  ]
+}

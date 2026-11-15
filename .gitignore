@@ -29,3 +29,5 @@ exports/*
 .idea/
 .DS_Store
 Thumbs.db
+
+!dashboard/data/

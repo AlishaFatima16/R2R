@@ -1,0 +1,59 @@
+name: Dashboard (GitHub Pages)
+
+# Publishes the static site in dashboard/ (including dashboard/data/) to GitHub Pages.
+# One-time setup: repository Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dashboard/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the data files
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          root = pathlib.Path("dashboard")
+          overview = root / "data" / "overview.json"
+          if not overview.exists():
+              sys.exit("::error::dashboard/data/overview.json is missing. The repo .gitignore ignores "
+                       "data/ folders: add '!dashboard/data/' to .gitignore and commit the export.")
+          for path in (root / "data").rglob("*.json"):
+              text = path.read_text(encoding="utf-8")
+              json.loads(text)
+              if "postgresql://" in text:
+                  sys.exit(f"::error::{path} contains a connection string")
+          size = sum(p.stat().st_size for p in root.rglob("*") if p.is_file())
+          print(f"site size: {size / 1024:.0f} KB; is_sample = {json.loads(overview.read_text())['is_sample']}")
+          if size > 5 * 1024 * 1024:
+              sys.exit("::error::dashboard/ is over 5 MB")
+          PY
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

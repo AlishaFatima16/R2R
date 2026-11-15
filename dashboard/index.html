@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>R2R Risk Observatory</title>
+  <meta name="description" content="PyPI supply-chain risk: releases, OSV advisories and the ETL pipeline behind them.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <script>
+    /* Apply the saved theme before first paint. Storage can throw (private windows), so guard it. */
+    try {
+      var t = localStorage.getItem("r2r-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <a class="brand" href="#/">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <rect width="24" height="24" rx="5" fill="var(--text)"/>
+          <g fill="var(--bg)"><rect x="5" y="6" width="1.6" height="7"/><rect x="8.6" y="6" width="1.6" height="7"/><rect x="12.2" y="6" width="1.6" height="7"/><rect x="15.8" y="6" width="1.6" height="7"/></g>
+          <rect x="9" y="16" width="9" height="2.6" rx="1.3" fill="var(--sev-medium)"/>
+        </svg>
+        <span class="brand-name">R2R<span class="brand-sub">PyPI Risk Observatory</span></span>
+      </a>
+      <nav class="nav" id="nav" aria-label="Pages">
+        <a href="#/" data-route="overview"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Overview</a>
+        <a href="#/packages" data-route="packages"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5l6-3 6 3v6l-6 3-6-3z"/><path d="M2 5l6 3 6-3M8 8v6"/></svg>Packages</a>
+        <a href="#/advisories" data-route="advisories"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2l6 11H2z"/><path d="M8 6.5v3M8 11.2v.1"/></svg>Advisories</a>
+        <span class="nav-label">How it was built</span>
+        <a href="#/pipeline" data-route="pipeline"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="8" r="1.6"/><circle cx="13" cy="8" r="1.6"/><path d="M4.6 8h6.8M9 5.5L11.5 8 9 10.5"/></svg>Pipeline</a>
+      </nav>
+      <div class="side-foot" id="side-foot" aria-live="polite"></div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <div class="content">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menu-btn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+        </button>
+        <div class="crumbs" id="crumbs"></div>
+        <div class="searchbox" role="search">
+          <svg class="glass" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+          <input id="search" type="search" placeholder="Search packages, CVE, GHSA" autocomplete="off" spellcheck="false" aria-label="Search packages and advisories" aria-controls="results" aria-autocomplete="list">
+          <span class="kbd" aria-hidden="true">/</span>
+          <div class="results" id="results" role="listbox" hidden></div>
+        </div>
+        <button class="icon-btn" id="theme-btn" aria-label="Switch theme" title="Switch theme">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+        </button>
+      </header>
+      <div class="banner" id="banner" hidden>
+        <b>SAMPLE DATA</b>
+        <span id="banner-text">Built from saved API responses in <span class="mono">fixtures/</span>, not from a pipeline run on the full seed list. Run the export to replace it.</span>
+      </div>
+      <main id="main" tabindex="-1" aria-live="polite"></main>
+    </div>
+  </div>
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+  <script type="module" src="assets/js/app.js"></script>
+  <noscript><p style="padding:24px">This dashboard needs JavaScript. The data is plain JSON in <code>data/</code>.</p></noscript>
+</body>
+</html>
