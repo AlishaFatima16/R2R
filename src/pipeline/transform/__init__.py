@@ -76,7 +76,24 @@ def transform(batch) -> object:
     frames.update(transform_advisories(advisory_items, frames.get("release")))
     from pipeline.orchestrate import TransformResult
 
-    return TransformResult(frames=frames)
+    return TransformResult(frames=_dedupe(frames))
+
+
+def _dedupe(frames):
+    """Drop repeated rows by natural key: one advisory can arrive via several packages."""
+    from pipeline.load.tables import LOAD_ORDER
+
+    for spec in LOAD_ORDER:
+        frame = frames.get(spec.table)
+        if frame is None or frame.empty:
+            continue
+        keys = list(spec.key)
+        if not set(keys) <= set(frame.columns):
+            continue
+        if "modified_at" in frame.columns:
+            frame = frame.sort_values("modified_at", kind="stable", na_position="first")
+        frames[spec.table] = frame.drop_duplicates(subset=keys, keep="last").reset_index(drop=True)
+    return frames
 
 
 __all__ = ["transform"]
