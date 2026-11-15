@@ -1,4 +1,4 @@
-# R2R (Raw to Real): PyPI Supply-Chain Risk Observatory
+﻿# R2R (Raw to Real): PyPI Supply-Chain Risk Observatory
 
 An ETL and EDA pipeline for Python supply-chain risk. It pulls package, release, dependency and advisory data from public APIs, validates it with Pydantic, transforms it with pandas, loads it into PostgreSQL, and serves the results in a web dashboard. The output is designed to be reused as an ML-ready dataset in later projects.
 
@@ -22,7 +22,7 @@ APIs -> source adapters -> raw files (data/raw, never committed) -> Pydantic val
      -> SQL views -> dashboard export (JSON) -> static web app
 ```
 
-Stage contracts are in [`docs/interfaces.md`](docs/interfaces.md); the data dictionary is in [`docs/data_dictionary.md`](docs/data_dictionary.md).
+Stage contracts are in [`docs/interfaces.md`](docs/interfaces.md); the data dictionary is in [`docs/data_dictionary.md`](docs/data_dictionary.md); the ER diagram is in [`docs/er_diagram.md`](docs/er_diagram.md).
 
 ## Repository layout
 
@@ -50,7 +50,7 @@ copy .env.example .env
 ```
 
 1. **Create a database.** Use a local PostgreSQL install, or Docker:
-   `docker run --name r2r-db -e POSTGRES_PASSWORD=<password> -e POSTGRES_DB=r2r -p 5432:5432 -d postgres:16`
+   `docker compose up -d db` (uses the `POSTGRES_*` values in `.env`, copied from `.env.example`)
 2. **Point the project at it** (never commit `.env`):
    `$env:DATABASE_URL = "postgresql://postgres:<password>@localhost:5432/r2r"`
 3. **Create the schema and views:**
